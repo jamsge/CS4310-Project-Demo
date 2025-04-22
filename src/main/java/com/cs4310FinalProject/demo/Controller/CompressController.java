@@ -1,6 +1,8 @@
 package com.cs4310FinalProject.demo.Controller;
 
 import com.cs4310FinalProject.demo.CompressionAlgos.LZW_Algo;
+import com.cs4310FinalProject.demo.CompressionAlgos.RLE_Algo;
+import com.cs4310FinalProject.demo.CompressionAlgos.LZ77_Algo; // Uncomment when Bzip2_Algo is implemented
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.core.io.InputStreamResource;
@@ -49,11 +51,12 @@ public class CompressController {
                 default -> throw new IllegalArgumentException("Unknown algorithm: " + algo);
             };
 
-            // Create temporary files for compressed and decompressed data (as of rn, these 2 files has nothing written in them)
-            Path compressed = Path.of(System.getProperty("java.io.tmpdir"), 
-                baseName + "_" + algo + "_compressed" + ext);
-            Path decompressed = Path.of(System.getProperty("java.io.tmpdir"), 
-                baseName + "_" + algo + "_decompressed" + extension); 
+            // Create temporary files for compressed and decompressed data (as of rn, these
+            // 2 files has nothing written in them)
+            Path compressed = Path.of(System.getProperty("java.io.tmpdir"),
+                    baseName + "_" + algo + "_compressed" + ext);
+            Path decompressed = Path.of(System.getProperty("java.io.tmpdir"),
+                    baseName + "_" + algo + "_decompressed" + extension);
 
             // Remove any existing files with the same name before creating new ones
             Files.deleteIfExists(compressed);
@@ -64,25 +67,31 @@ public class CompressController {
             long startComp = System.currentTimeMillis();
             switch (algo) {
 
-                // Calls the compression algorithm and pass the original and compressed file paths
+                // Calls the compression algorithm and pass the original and compressed file
+                // paths
                 case "LZW" -> LZW_Algo.compressFile(original.toString(), compressed.toString());
 
                 // Add ur algos then remove the comment here
 
                 // case "RLE" -> RLE_Algo.compress();
+                case "RLE" -> RLE_Algo.compressFile(original.toString(), compressed.toString());
                 // case "BZIP2" -> Bzip2_Algo.compress();
                 // case "LZ77" -> LZ77_Algo.compress();
+                case "LZ77" -> LZ77_Algo.compressFile(original.toString(), compressed.toString());
             }
             long endComp = System.currentTimeMillis();
 
             long startDecomp = System.currentTimeMillis();
             switch (algo) {
 
-                // Calls the decompression algorithm and pass the compressed and decompressed file paths
+                // Calls the decompression algorithm and pass the compressed and decompressed
+                // file paths
                 case "LZW" -> LZW_Algo.decompressFile(compressed.toString(), decompressed.toString());
                 // case "RLE" -> RLE_Algo.decompressFile();
+                case "RLE" -> RLE_Algo.decompressFile(compressed.toString(), decompressed.toString());
                 // case "BZIP2" -> Bzip2_Algo.decompressFile();
                 // case "LZ77" -> LZ77_Algo.decompressFile();
+                case "LZ77" -> LZ77_Algo.decompressFile(compressed.toString(), decompressed.toString());
             }
             long endDecomp = System.currentTimeMillis();
 
@@ -92,7 +101,7 @@ public class CompressController {
             long compressionTime = endComp - startComp;
             double compressionRatio = (double) originalSize / compressedSize;
             double speedRatio = compressionRatio / compressionTime;
-            
+
             Map<String, Object> result = new HashMap<>();
             result.put("algorithm", algo);
             result.put("originalSize", originalSize);
@@ -110,7 +119,6 @@ public class CompressController {
         return ResponseEntity.ok(Map.of("results", results));
     }
 
-    
     @GetMapping("/files/{filename}")
     public ResponseEntity<Resource> download(@PathVariable String filename) throws IOException {
         Path path = Files.list(Path.of(System.getProperty("java.io.tmpdir")))
