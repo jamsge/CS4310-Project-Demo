@@ -15,11 +15,16 @@ import java.util.Map;
 
 public class LZW_Algo {
 
-    // Write the compressed data to a file
+    // Method to handle compression and decompression method calls
+
     public static void compressFile(String inputPath, String outputPath) throws IOException {
+        // Read the input file into a byte array
         byte[] inputData = Files.readAllBytes(new File(inputPath).toPath());
+
+        // Call the actual compression algorithm
         List<Integer> compressedData = compress(inputData);
 
+        // Write the compressed data to the output file
         try (DataOutputStream out = new DataOutputStream(new FileOutputStream(outputPath))) {
             for (int data : compressedData) {
                 out.writeShort(data);
@@ -27,21 +32,24 @@ public class LZW_Algo {
         }
     }
 
-    // Write the decompressed data to a file
     public static void decompressFile(String inputPath, String outputPath) throws IOException {
+        // Read the compressed data from the input file
         List<Integer> compressedData = new ArrayList<>();
-
         try (DataInputStream in = new DataInputStream(new FileInputStream(inputPath))) {
             while (in.available() > 0) {
                 compressedData.add(in.readUnsignedShort());
             }
         }
 
+        // Call the actual decompression algorithm
         byte[] decompressedData = decompress(compressedData);
+
+        // Write the decompressed data to the output file
         Files.write(new File(outputPath).toPath(), decompressedData);
     }
 
 
+    // Acutal LZW compression and decompression algorithm
     // Algo Following: https://www.cs.columbia.edu/~allen/S14/NOTES/lzw.pdf
     
     private static List<Integer> compress(byte[] input) {

@@ -26,13 +26,16 @@ public class CompressController {
             @RequestParam("algorithms") String algorithmList,
             HttpServletRequest request) throws IOException {
 
+        // Create a temporary file for the original data
         Path original = Files.createTempFile("original", null);
         file.transferTo(original.toFile());
 
+        // Get the base name and extension of the original file
         String currFile = Paths.get(file.getOriginalFilename()).getFileName().toString();
         String baseName = currFile.substring(0, currFile.lastIndexOf('.'));
         String extension = currFile.substring(currFile.lastIndexOf('.'));
 
+        // Handle which algorithms was selected from the frontend
         List<String> selectedAlgos = Arrays.asList(algorithmList.split(","));
         List<Map<String, Object>> results = new ArrayList<>();
 
@@ -46,11 +49,13 @@ public class CompressController {
                 default -> throw new IllegalArgumentException("Unknown algorithm: " + algo);
             };
 
+            // Create temporary files for compressed and decompressed data (as of rn, these 2 files has nothing written in them)
             Path compressed = Path.of(System.getProperty("java.io.tmpdir"), 
                 baseName + "_" + algo + "_compressed" + ext);
             Path decompressed = Path.of(System.getProperty("java.io.tmpdir"), 
                 baseName + "_" + algo + "_decompressed" + extension); 
 
+            // Remove any existing files with the same name before creating new ones
             Files.deleteIfExists(compressed);
             Files.deleteIfExists(decompressed);
             Files.createFile(compressed);
@@ -58,6 +63,8 @@ public class CompressController {
 
             long startComp = System.currentTimeMillis();
             switch (algo) {
+
+                // Calls the compression algorithm and pass the original and compressed file paths
                 case "LZW" -> LZW_Algo.compressFile(original.toString(), compressed.toString());
 
                 // Add ur algos then remove the comment here
@@ -70,6 +77,8 @@ public class CompressController {
 
             long startDecomp = System.currentTimeMillis();
             switch (algo) {
+
+                // Calls the decompression algorithm and pass the compressed and decompressed file paths
                 case "LZW" -> LZW_Algo.decompressFile(compressed.toString(), decompressed.toString());
                 // case "RLE" -> RLE_Algo.decompressFile();
                 // case "BZIP2" -> Bzip2_Algo.decompressFile();
