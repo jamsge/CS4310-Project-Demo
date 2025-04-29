@@ -8,7 +8,17 @@
     label { display: block; margin-top: 10px; }
     button { margin-top: 20px; }
     table { margin-top: 20px; border-collapse: collapse; width: 100%; }
-    th, td { border: 1px solid #ccc; padding: 8px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    a.button-link {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 10px 15px;
+      background-color: #4CAF50;
+      color: white;
+      text-decoration: none;
+      border-radius: 4px;
+    }
+    .error { color: red; margin-top: 20px; }
   </style>
 </head>
 <body>
@@ -16,67 +26,94 @@
 
   <form id="uploadForm">
     <label>Choose a file:
-      <input type="file" name="file" required />
+      <input type="file" id="fileInput" name="file" required />
     </label>
 
-    <label><input type="checkbox" name="algos" value="LZW" checked /> LZW</label>
-    <label><input type="checkbox" name="algos" value="RLE" checked /> RLE</label>
-    <label><input type="checkbox" name="algos" value="BZIP2" checked /> BZIP2</label>
-    <label><input type="checkbox" name="algos" value="LZ77" checked /> LZ77</label>
+    <label><input type="checkbox" class="algoCheckbox" value="LZW" checked /> LZW</label>
+    <label><input type="checkbox" class="algoCheckbox" value="RLE" checked /> RLE</label>
+    <label><input type="checkbox" class="algoCheckbox" value="BZIP2" checked /> BZIP2</label>
+    <label><input type="checkbox" class="algoCheckbox" value="LZ77" checked /> LZ77</label>
 
     <button type="submit">Run Compression</button>
   </form>
 
   <div id="results"></div>
+  <div class="error" id="error"></div>
 
   <script>
     document.getElementById('uploadForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const form = e.target;
-      const file = form.file.files[0];
-      const algos = [...form.algos].filter(a => a.checked).map(a => a.value);
+      document.getElementById('results').innerHTML = '';
+      document.getElementById('error').textContent = '';
+
+      const fileInput = document.getElementById('fileInput');
+      const checkboxes = document.querySelectorAll('.algoCheckbox');
+      const selectedAlgos = Array.from(checkboxes)
+        .filter(checkbox => checkbox.checked)
+        .map(checkbox => checkbox.value);
+
+      if (fileInput.files.length === 0) {
+        document.getElementById('error').textContent = 'Please select a file.';
+        return;
+      }
+      if (selectedAlgos.length === 0) {
+        document.getElementById('error').textContent = 'Please select at least one algorithm.';
+        return;
+      }
 
       const formData = new FormData();
-      formData.append('file', file);
-      formData.append('algorithms', algos.join(','));
+      formData.append('file', fileInput.files[0]);
+      formData.append('algorithms', selectedAlgos.join(','));
 
-      const res = await fetch('/compress/compare', {
-        method: 'POST',
-        body: formData
-      });
+      try {
+        const res = await fetch('/compress/compare', {
+          method: 'POST',
+          body: formData
+        });
 
-      const data = await res.json();
-      const tableRows = data.results.map(r => `
-        <tr>
-            <td>${r.algorithm}</td>
-            <td>${r.originalSize} B</td>
-            <td>${r.compressedSize} B</td>
-            <td>${r.compressionTime} ms</td>
-            <td>${r.decompressionTime} ms</td>
-            <td>${r.compressionRatio}</td>
-            <td>${r.compressionSpeedRatio}</td>
-            <td><a href="${r.compressedUrl}" download>Download</a></td>
-            <td><a href="${r.decompressedUrl}" download>Download</a></td>
-        </tr>`).join('');
+        if (!res.ok) {
+          throw new Error('Failed to compress file');
+        }
 
-      document.getElementById('results').innerHTML = `
-        <h2>Results</h2>
-        <table>
-          <thead>
-            <tr>
-                <th>Algorithm</th>
-                <th>Original Size</th>
-                <th>Compressed Size</th>
-                <th>Compression Time</th>
-                <th>Decompression Time</th>
-                <th>Compression Ratio(Original Size/Compression Size)</th>
-                <th>Speed Ratio (ratio/ms)</th>
-                <th>Compressed File</th>
-                <th>Decompressed File</th>
-            </tr>
-          </thead>
-          <tbody>${tableRows}</tbody>
-        </table>`;
+        const data = await res.json();
+
+        const tableRows = data.results.map(r => `
+          <tr>
+              <td>${r.algorithm}</td>
+              <td>${r.originalSize} B</td>
+              <td>${r.compressedSize} B</td>
+              <td>${r.avgCompressionTime} ms</td>
+              <td>${r.avgDecompressionTime} ms</td>
+              <td>${r.avgCompressionRatio} %</td>
+              <td>${r.avgCompressionSpeedRatio}</td>
+              <td>${r.errorRate} %</td>
+              <td><a href="${r.compressedUrl}" download>Download</a></td>
+              <td><a href="${r.decompressedUrl}" download>Download</a></td>
+          </tr>`).join('');
+
+        document.getElementById('results').innerHTML = `
+          <h2>Results</h2>
+          <a class="button-link" href="${data.csvUrl}" download>Download Full CSV Results</a>
+          <table>
+            <thead>
+              <tr>
+                  <th>Algorithm</th>
+                  <th>Original Size</th>
+                  <th>Compressed Size</th>
+                  <th>Avg Compression Time</th>
+                  <th>Avg Decompression Time</th>
+                  <th>Avg Compression Ratio</th>
+                  <th>Avg Compression Speed Ratio</th>
+                  <th>Error Rate</th>
+                  <th>Compressed File</th>
+                  <th>Decompressed File</th>
+              </tr>
+            </thead>
+            <tbody>${tableRows}</tbody>
+          </table>`;
+      } catch (err) {
+        document.getElementById('error').textContent = err.message;
+      }
     });
   </script>
 </body>
