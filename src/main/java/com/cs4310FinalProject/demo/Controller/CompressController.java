@@ -2,7 +2,8 @@ package com.cs4310FinalProject.demo.Controller;
 
 import com.cs4310FinalProject.demo.CompressionAlgos.LZW_Algo;
 import com.cs4310FinalProject.demo.CompressionAlgos.RLE_Algo;
-import com.cs4310FinalProject.demo.CompressionAlgos.LZ77_Algo; // Uncomment when Bzip2_Algo is implemented
+import com.cs4310FinalProject.demo.CompressionAlgos.LZ77_Algo;
+import com.cs4310FinalProject.demo.CompressionAlgos.BZip2_Algo;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.core.io.InputStreamResource;
@@ -91,6 +92,7 @@ public class CompressController {
                     case "RLE" -> RLE_Algo.compressFile(original.toString(), compressed.toString());
 
                     // case "BZIP2" -> Bzip2_Algo.compress();
+                    case "BZIP2" -> BZip2_Algo.compressFile(original.toString(), compressed.toString());
 
                     // case "LZ77" -> LZ77_Algo.compress();
                     case "LZ77" -> LZ77_Algo.compressFile(original.toString(), compressed.toString());
@@ -109,6 +111,7 @@ public class CompressController {
                     case "RLE" -> RLE_Algo.decompressFile(compressed.toString(), decompressed.toString());
 
                     // case "BZIP2" -> Bzip2_Algo.decompressFile();
+                    case "BZIP2" -> BZip2_Algo.decompressFile(compressed.toString(), decompressed.toString());
 
                     // case "LZ77" -> LZ77_Algo.decompressFile();
                     case "LZ77" -> LZ77_Algo.decompressFile(compressed.toString(), decompressed.toString());
