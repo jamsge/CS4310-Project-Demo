@@ -104,7 +104,7 @@ public class LZW_Algo {
         for (int code : compressed) {
             String currentString;
             if (!dictionary.containsKey(code)) {
-                currentString = priorString.append(priorString.charAt(0)).toString();
+                currentString = priorString.toString() + priorString.charAt(0);
             } else {
                 currentString = dictionary.get(code);
             }
