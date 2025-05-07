@@ -9,7 +9,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -28,39 +27,51 @@ public class FileDeduplicatorController {
 
         Map<String, Object> response = new HashMap<>();
         
-        // First check if we have directory files from the directory picker
-        List<File> allFiles = new ArrayList<>();
-        File directory = new File(directoryPath);;
+        // Determine which files to process based on inputs
+        List<File> filesToProcess = new ArrayList<>();
+        List<Path> tempFiles = new ArrayList<>();  // Track temp files for cleanup
+        
+        // Check if directory path exists and is a directory
+        File directory = new File(directoryPath);
+        boolean useDirectoryPath = directory.exists() && directory.isDirectory();
+        
+        // Process uploaded directory files if available
         if (directoryFiles != null && directoryFiles.length > 0) {
-            // Process the files directly from the directory picker
             for (MultipartFile uploadedFile : directoryFiles) {
-                // Create a temporary file for each uploaded file
-                Path tempFile = Files.createTempFile("uploaded_dir_", null);
-                uploadedFile.transferTo(tempFile.toFile());
-                allFiles.add(tempFile.toFile());
+                if (!uploadedFile.isEmpty()) {
+                    // Create a temporary file for each uploaded file
+                    Path tempFile = Files.createTempFile("uploaded_dir_", null);
+                    uploadedFile.transferTo(tempFile.toFile());
+                    filesToProcess.add(tempFile.toFile());
+                    tempFiles.add(tempFile);
+                }
             }
-        } else {
-            // Fallback to traditional path-based approach
-            if (!directory.exists() || !directory.isDirectory()) {
-                response.put("error", "Invalid directory path");
-                return ResponseEntity.badRequest().body(response);
-            }
-            allFiles = FileDeduplicator.getAllFiles(directory);
+        } 
+        // If no files uploaded but directory path is valid, use it
+        else if (useDirectoryPath) {
+            filesToProcess = FileDeduplicator.getAllFiles(directory);
+        } 
+        // Neither directory path nor uploads are valid
+        else {
+            response.put("error", "No valid files or directory provided");
+            return ResponseEntity.badRequest().body(response);
         }
-
-        // If specific file is provided, find duplicates of that file
+        
+        // If specific file is provided to check against all others
         if (file != null && !file.isEmpty()) {
             // Create a temporary file from uploaded file
-            Path tempFile = Files.createTempFile("uploaded", null);
+            Path tempFile = Files.createTempFile("uploaded_file_", null);
             file.transferTo(tempFile.toFile());
+            tempFiles.add(tempFile);
             
             // Get the hash of the uploaded file
             String fileHash = FileDeduplicator.getFileHash(tempFile.toFile());
             
             // Find duplicates with the same hash
             List<String> duplicatePaths = new ArrayList<>();
-            for (File f : FileDeduplicator.getAllFiles(directory)) {
-                if (FileDeduplicator.getFileHash(f).equals(fileHash)) {
+            for (File f : filesToProcess) {
+                String currentHash = FileDeduplicator.getFileHash(f);
+                if (currentHash.equals(fileHash)) {
                     duplicatePaths.add(f.getAbsolutePath());
                 }
             }
@@ -69,20 +80,20 @@ public class FileDeduplicatorController {
             response.put("originalFileName", file.getOriginalFilename());
             response.put("duplicates", duplicatePaths);
             response.put("duplicateCount", duplicatePaths.size());
-            
-            // Clean up temp file
-            Files.deleteIfExists(tempFile);
         } 
-        // Find all duplicates in directory
+        // Find all duplicates among the files
         else {
             Map<String, List<String>> hashToFilePaths = new HashMap<>();
             
             // Collect all files and their hashes
-            for (File f : FileDeduplicator.getAllFiles(directory)) {
-                String hash = FileDeduplicator.getFileHash(f);
-                List<String> paths = hashToFilePaths.getOrDefault(hash, new ArrayList<>());
-                paths.add(f.getAbsolutePath());
-                hashToFilePaths.put(hash, paths);
+            for (File f : filesToProcess) {
+                try {
+                    String hash = FileDeduplicator.getFileHash(f);
+                    hashToFilePaths.computeIfAbsent(hash, k -> new ArrayList<>()).add(f.getAbsolutePath());
+                } catch (Exception e) {
+                    // Log error but continue with other files
+                    System.err.println("Error processing file: " + f.getAbsolutePath() + " - " + e.getMessage());
+                }
             }
             
             // Filter only duplicates (files with same hash)
@@ -99,6 +110,15 @@ public class FileDeduplicatorController {
             
             response.put("duplicateGroups", duplicateGroups);
             response.put("totalGroups", duplicateGroups.size());
+        }
+        
+        // Clean up temp files
+        for (Path tempFile : tempFiles) {
+            try {
+                Files.deleteIfExists(tempFile);
+            } catch (Exception e) {
+                System.err.println("Failed to delete temp file: " + tempFile);
+            }
         }
         
         return ResponseEntity.ok(response);
