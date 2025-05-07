@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Compression Algorithm Comparison</title>
+  <title>Compression & Deduplication Demo</title>
   <style>
     body { font-family: sans-serif; padding: 20px; }
     label { display: block; margin-top: 10px; }
@@ -19,32 +19,159 @@
       border-radius: 4px;
     }
     .error { color: red; margin-top: 20px; }
+    .tab {
+      overflow: hidden;
+      border: 1px solid #ccc;
+      background-color: #f1f1f1;
+      margin-bottom: 20px;
+    }
+    .tab button {
+      background-color: inherit;
+      float: left;
+      border: none;
+      outline: none;
+      cursor: pointer;
+      padding: 14px 16px;
+      transition: 0.3s;
+      margin-top: 0;
+    }
+    .tab button:hover {
+      background-color: #ddd;
+    }
+    .tab button.active {
+      background-color: #ccc;
+    }
+    .tabcontent {
+      display: none;
+      padding: 6px 12px;
+      border: 1px solid #ccc;
+      border-top: none;
+    }
+    .hash-display {
+      font-family: monospace;
+      background-color: #f8f8f8;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      word-break: break-all;
+      margin-top: 10px;
+    }
+    .duplicate-file {
+      padding: 5px;
+      margin: 5px 0;
+      background-color: #f0f0f0;
+      border-radius: 3px;
+    }
+    #directoryPath {
+      display: inline-block;
+      width: 70%;
+      cursor: pointer;
+    }
+    #browseButton {
+      margin-top: 0;
+      margin-left: 10px;
+      padding: 5px 10px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    #browseButton:hover {
+      background-color: #45a049;
+    }
   </style>
 </head>
 <body>
-  <h1>Compare Compression Algorithms</h1>
+  <h1>File Processing Tools</h1>
+  
+  <div class="tab">
+    <button class="tablinks active" onclick="openTab(event, 'Compression')">Compression</button>
+    <button class="tablinks" onclick="openTab(event, 'Deduplication')">Deduplication</button>
+  </div>
 
-  <form id="uploadForm">
-    <label>Choose a file:
-      <input type="file" id="fileInput" name="file" required />
-    </label>
+  <!-- Compression Tab -->
+  <div id="Compression" class="tabcontent" style="display: block;">
+    <h2>Compare Compression Algorithms</h2>
 
-    <label><input type="checkbox" class="algoCheckbox" value="LZW" checked /> LZW</label>
-    <label><input type="checkbox" class="algoCheckbox" value="RLE" checked /> RLE</label>
-    <label><input type="checkbox" class="algoCheckbox" value="BZIP2" checked /> BZIP2</label>
-    <label><input type="checkbox" class="algoCheckbox" value="LZ77" checked /> LZ77</label>
+    <form id="uploadForm">
+      <label>Choose a file:
+        <input type="file" id="fileInput" name="file" required />
+      </label>
 
-    <button type="submit">Run Compression</button>
-  </form>
+      <label><input type="checkbox" class="algoCheckbox" value="LZW" checked /> LZW</label>
+      <label><input type="checkbox" class="algoCheckbox" value="RLE" checked /> RLE</label>
+      <label><input type="checkbox" class="algoCheckbox" value="BZIP2" checked /> BZIP2</label>
+      <label><input type="checkbox" class="algoCheckbox" value="LZ77" checked /> LZ77</label>
 
-  <div id="results"></div>
-  <div class="error" id="error"></div>
+      <button type="submit">Run Compression</button>
+    </form>
+
+    <div id="compressionResults"></div>
+    <div class="error" id="compressionError"></div>
+  </div>
+
+  <!-- Deduplication Tab -->
+  <div id="Deduplication" class="tabcontent">
+    <h2>File Deduplication</h2>
+
+    <form id="deduplicationForm">
+      <label>Select Directory:
+        <input type="file" id="directoryPicker" webkitdirectory directory multiple style="display:none;" />
+        <input type="text" id="directoryPath" name="directoryPath" required readonly placeholder="Click to select directory" />
+        <button type="button" id="browseButton">Browse...</button>
+      </label>
+
+      <label>Upload file to find duplicates (optional):
+        <input type="file" id="fileToFind" name="file" />
+      </label>
+
+      <button type="submit">Find Duplicates</button>
+    </form>
+
+    <div id="deduplicationResults"></div>
+    <div class="error" id="deduplicationError"></div>
+  </div>
 
   <script>
+    // Initialize directory picker
+    document.getElementById('browseButton').addEventListener('click', function() {
+      document.getElementById('directoryPicker').click();
+    });
+    
+    document.getElementById('directoryPath').addEventListener('click', function() {
+      document.getElementById('directoryPicker').click();
+    });
+    
+    document.getElementById('directoryPicker').addEventListener('change', function(e) {
+      const files = e.target.files;
+      if (files.length > 0) {
+        // Get the directory path from the first file
+        const path = files[0].webkitRelativePath.split('/')[0];
+        document.getElementById('directoryPath').value = path;
+      }
+    });
+    
+    // Tab functionality
+    function openTab(evt, tabName) {
+      var i, tabcontent, tablinks;
+      tabcontent = document.getElementsByClassName("tabcontent");
+      for (i = 0; i < tabcontent.length; i++) {
+        tabcontent[i].style.display = "none";
+      }
+      tablinks = document.getElementsByClassName("tablinks");
+      for (i = 0; i < tablinks.length; i++) {
+        tablinks[i].className = tablinks[i].className.replace(" active", "");
+      }
+      document.getElementById(tabName).style.display = "block";
+      evt.currentTarget.className += " active";
+    }
+
+    // Compression form handling
     document.getElementById('uploadForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      document.getElementById('results').innerHTML = '';
-      document.getElementById('error').textContent = '';
+      document.getElementById('compressionResults').innerHTML = '';
+      document.getElementById('compressionError').textContent = '';
 
       const fileInput = document.getElementById('fileInput');
       const checkboxes = document.querySelectorAll('.algoCheckbox');
@@ -53,11 +180,11 @@
         .map(checkbox => checkbox.value);
 
       if (fileInput.files.length === 0) {
-        document.getElementById('error').textContent = 'Please select a file.';
+        document.getElementById('compressionError').textContent = 'Please select a file.';
         return;
       }
       if (selectedAlgos.length === 0) {
-        document.getElementById('error').textContent = 'Please select at least one algorithm.';
+        document.getElementById('compressionError').textContent = 'Please select at least one algorithm.';
         return;
       }
 
@@ -91,7 +218,7 @@
               <td><a href="${r.decompressedUrl}" download>Download</a></td>
           </tr>`).join('');
 
-        document.getElementById('results').innerHTML = `
+        document.getElementById('compressionResults').innerHTML = `
           <h2>Results</h2>
           <a class="button-link" href="${data.csvUrl}" download>Download Full CSV Results</a>
           <table>
@@ -112,7 +239,106 @@
             <tbody>${tableRows}</tbody>
           </table>`;
       } catch (err) {
-        document.getElementById('error').textContent = err.message;
+        document.getElementById('compressionError').textContent = err.message;
+      }
+    });
+
+    // Deduplication form handling
+    document.getElementById('deduplicationForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      document.getElementById('deduplicationResults').innerHTML = '';
+      document.getElementById('deduplicationError').textContent = '';
+
+      const directoryPath = document.getElementById('directoryPath').value;
+      const fileInput = document.getElementById('fileToFind');
+
+      if (!directoryPath) {
+        document.getElementById('deduplicationError').textContent = 'Please enter a directory path.';
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('directoryPath', directoryPath);
+      
+      // Add selected directory files if available
+      const dirPicker = document.getElementById('directoryPicker');
+      if (dirPicker.files.length > 0) {
+        for (let i = 0; i < dirPicker.files.length; i++) {
+          formData.append('files', dirPicker.files[i]);
+        }
+      }
+      
+      if (fileInput.files.length > 0) {
+        formData.append('file', fileInput.files[0]);
+      }
+
+      try {
+        const res = await fetch('/deduplicate/find', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!res.ok) {
+          throw new Error('Failed to find duplicates');
+        }
+
+        const data = await res.json();
+        
+        if (data.error) {
+          document.getElementById('deduplicationError').textContent = data.error;
+          return;
+        }
+
+        let resultsHTML = '';
+        
+        // For specific file search
+        if (data.fileHash) {
+          resultsHTML += `
+            <h3>Results for ${data.originalFileName}</h3>
+            <div class="hash-display">File Hash: ${data.fileHash}</div>
+            <p>Found ${data.duplicateCount} duplicate(s) in the specified directory:</p>
+          `;
+          
+          if (data.duplicateCount > 0) {
+            resultsHTML += '<div class="duplicate-list">';
+            data.duplicates.forEach(path => {
+              resultsHTML += `<div class="duplicate-file">${path}</div>`;
+            });
+            resultsHTML += '</div>';
+          } else {
+            resultsHTML += '<p>No duplicates found.</p>';
+          }
+        } 
+        // For general directory scan
+        else {
+          resultsHTML += `<h3>Found ${data.totalGroups} groups of duplicate files</h3>`;
+          
+          if (data.totalGroups > 0) {
+            data.duplicateGroups.forEach(group => {
+              resultsHTML += `
+                <div class="duplicate-group">
+                  <h4>Group with ${group.count} duplicates</h4>
+                  <div class="hash-display">Hash: ${group.hash}</div>
+                  <div class="duplicate-list">
+              `;
+              
+              group.files.forEach(path => {
+                resultsHTML += `<div class="duplicate-file">${path}</div>`;
+              });
+              
+              resultsHTML += `
+                  </div>
+                </div>
+              `;
+            });
+          } else {
+            resultsHTML += '<p>No duplicate files found in the directory.</p>';
+          }
+        }
+        
+        document.getElementById('deduplicationResults').innerHTML = resultsHTML;
+      } catch (err) {
+        document.getElementById('deduplicationError').textContent = err.message;
       }
     });
   </script>
