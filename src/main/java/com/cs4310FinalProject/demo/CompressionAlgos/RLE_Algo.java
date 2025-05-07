@@ -3,7 +3,6 @@ package com.cs4310FinalProject.demo.CompressionAlgos;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Scanner;
 
 public class RLE_Algo {
 
@@ -34,7 +33,6 @@ public class RLE_Algo {
     // }
 
     public static void compressFile(String inputFilePath, String outputFilePath) {
-
         try {
             String inputData = new String(Files.readAllBytes(Paths.get(inputFilePath)));
             String compressedData = compress(inputData);
@@ -66,8 +64,7 @@ public class RLE_Algo {
                 count++;
             } else {
                 // Append the current character and its count to the compressed string
-                compressed.append(input.charAt(i));
-                compressed.append(count);
+                compressed.append(compressSpecialCase(input.charAt(i))).append(":").append(count).append(";");
                 count = 1; // Reset count for the next character
             }
         }
@@ -77,25 +74,44 @@ public class RLE_Algo {
 
     public static String decompress(String input) {
         StringBuilder decompressed = new StringBuilder();
-        for (int i = 0; i < input.length(); i++) {
-            char currentChar = input.charAt(i);
-            i++; // Move to the next character which should be the count
-            StringBuilder countBuilder = new StringBuilder();
 
-            // Collect all digits for the count
-            while (i < input.length() && Character.isDigit(input.charAt(i))) {
-                countBuilder.append(input.charAt(i));
+        int i = 0;
+        while (i < input.length()) {
+            StringBuilder token = new StringBuilder();
+            while (i < input.length() && input.charAt(i) != ':') {
+                char ch = input.charAt(i);
+                if (ch == '\\' && i + 1 < input.length()) {
+                    token.append(input.charAt(i + 1)); 
+                    i += 2;
+                } else {
+                    token.append(ch);
+                    i++;
+                }
+            }
+            i++; // skip ':'
+    
+            StringBuilder countStr = new StringBuilder();
+            while (i < input.length() && input.charAt(i) != ';') {
+                countStr.append(input.charAt(i));
                 i++;
             }
-            i--; // Adjust index since the for loop will increment it
-
-            int count = Integer.parseInt(countBuilder.toString()); // Convert count to integer
-
-            // Append the current character 'count' times to the decompressed string
+            i++; // skip ';'
+    
+            int count = Integer.parseInt(countStr.toString());
+            String tokenStr = token.toString();
+    
             for (int j = 0; j < count; j++) {
-                decompressed.append(currentChar);
+                decompressed.append(tokenStr);
             }
         }
         return decompressed.toString();
     }
+
+    private static String compressSpecialCase(char ch) {
+        if (ch == ':' || ch == ';' || ch == '\\') {
+            return "\\" + ch;
+        }
+        return String.valueOf(ch);
+    }
 }
+

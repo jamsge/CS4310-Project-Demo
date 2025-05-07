@@ -82,11 +82,10 @@
               <td>${r.algorithm}</td>
               <td>${r.originalSize} B</td>
               <td>${r.compressedSize} B</td>
-              <td>${r.avgCompressionTime} ms</td>
-              <td>${r.avgDecompressionTime} ms</td>
-              <td>${r.avgCompressionRatio} %</td>
-              <td>${r.avgCompressionSpeedRatio}</td>
-              <td>${r.errorRate} %</td>
+              <td>${r.avgCompressionTime} ns</td>
+              <td>${r.avgDecompressionTime} ns</td>
+              <td>${r.avgCompressionRatio}%</td>
+              <td>${r.errorRate}%</td>
               <td><a href="${r.compressedUrl}" download>Download</a></td>
               <td><a href="${r.decompressedUrl}" download>Download</a></td>
           </tr>`).join('');
@@ -103,7 +102,6 @@
                   <th>Avg Compression Time</th>
                   <th>Avg Decompression Time</th>
                   <th>Avg Compression Ratio</th>
-                  <th>Avg Compression Speed Ratio</th>
                   <th>Error Rate</th>
                   <th>Compressed File</th>
                   <th>Decompressed File</th>

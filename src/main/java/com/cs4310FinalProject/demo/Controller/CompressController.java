@@ -45,7 +45,7 @@ public class CompressController {
         // array for csv file
         List<String> csvLines = new ArrayList<>();
         csvLines.add(
-                "Algorithm,Run,OriginalSize,CompressedSize,CompressionTime(ms),DecompressionTime(ms),CompressionRatio(%),CompressionSavings(%),CompressionSpeedRatio(Perc/ms),Correctness");
+                "Algorithm,Run,OriginalSize,CompressedSize,CompressionTime(ns),DecompressionTime(ns),CompressionRatio(%),CompressionSavings(%),CompressionSpeedRatio(Perc/ms),Correctness");
 
         for (String algo : selectedAlgos) {
             String ext = switch (algo) {
@@ -80,8 +80,8 @@ public class CompressController {
                 Files.createFile(compressed);
                 Files.createFile(decompressed);
 
-                long startComp = System.currentTimeMillis();
-                switch (algo) {
+                long startComp = System.nanoTime();
+                    switch (algo) {
 
                     // Calls the algorithm and pass the original and compressed file paths
 
@@ -97,9 +97,9 @@ public class CompressController {
                     // case "LZ77" -> LZ77_Algo.compress();
                     case "LZ77" -> LZ77_Algo.compressFile(original.toString(), compressed.toString());
                 }
-                long endComp = System.currentTimeMillis();
+                long endComp = System.nanoTime();
 
-                long startDecomp = System.currentTimeMillis();
+                long startDecomp = System.nanoTime();
                 switch (algo) {
 
                     // Calls the algorithm and pass the compressed and decompressed file paths
@@ -116,15 +116,15 @@ public class CompressController {
                     // case "LZ77" -> LZ77_Algo.decompressFile();
                     case "LZ77" -> LZ77_Algo.decompressFile(compressed.toString(), decompressed.toString());
                 }
-                long endDecomp = System.currentTimeMillis();
+                long endDecomp = System.nanoTime();
 
                 // calculate the results
 
                 originalSize = Files.size(original);
                 compressedSize = Files.size(compressed);
 
-                long compressionTime = endComp - startComp;
-                long decompressionTime = endDecomp - startDecomp;
+                long compressionTime = (endComp - startComp);
+                long decompressionTime = (endDecomp - startDecomp);
                 double compressionRatio = ((double) compressedSize / originalSize) * 100;
                 double compressionSavings = (1.0 - ((double) compressedSize / originalSize)) * 100;
                 double compressionSpeedRatio = compressionRatio / compressionTime;
@@ -155,12 +155,12 @@ public class CompressController {
             avgResult.put("algorithm", algo);
             avgResult.put("originalSize", originalSize);
             avgResult.put("compressedSize", compressedSize);
-            avgResult.put("avgCompressionTime", totalCompressionTime / 100);
-            avgResult.put("avgDecompressionTime", totalDecompressionTime / 100);
-            avgResult.put("avgCompressionRatio", String.format("%.2f", totalCompressionRatio / 100));
-            avgResult.put("avgCompressionSavings", String.format("%.2f", totalCompressionSavings / 100));
-            avgResult.put("avgCompressionSpeedRatio", String.format("%.4f", totalCompressionSpeedRatio / 100));
-            avgResult.put("errorRate", String.format("%.2f%%", (totalErrors / 100.0) * 100));
+            avgResult.put("avgCompressionTime", totalCompressionTime / 50);
+            avgResult.put("avgDecompressionTime", totalDecompressionTime / 50);
+            avgResult.put("avgCompressionRatio", String.format("%.2f", totalCompressionRatio / 50));
+            avgResult.put("avgCompressionSavings", String.format("%.2f", totalCompressionSavings / 50));
+            avgResult.put("avgCompressionSpeedRatio", String.format("%.10f", totalCompressionSpeedRatio / 50));
+            avgResult.put("errorRate", String.format("%.2f", (totalErrors / 50.0) * 100));
             avgResult.put("compressedUrl", "/compress/files/" + baseName + "_" + algo + "_compressed_1" + ext);
             avgResult.put("decompressedUrl",
                     "/compress/files/" + baseName + "_" + algo + "_decompressed_1" + extension);
