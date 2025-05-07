@@ -121,7 +121,9 @@ public class LZ77_Algo {
             }
 
             // write next character to end of the output array
-            output.write(nextChar);
+            if (nextChar != (byte)0) {
+                output.write(nextChar);
+            }
         }
 
         return output.toByteArray();
