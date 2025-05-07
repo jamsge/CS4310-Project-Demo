@@ -43,7 +43,7 @@ public class FileDeduplicator {
         }
     }
 
-    private static List<File> getAllFiles(File dir) {
+    public static List<File> getAllFiles(File dir) {
         List<File> fileList = new ArrayList<>();
         if (!dir.isDirectory()) return fileList;
 
