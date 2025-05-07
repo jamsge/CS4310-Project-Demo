@@ -7,36 +7,33 @@ import java.util.Scanner;
 
 public class RLE_Algo {
 
-    public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
-        boolean continueRunning = true;
+    // public static void main(String[] args) {
+    //     Scanner scanner = new Scanner(System.in);
+    //     boolean continueRunning = true;
 
-        while (continueRunning) {
-            System.out.print("Enter 'c' to compress, 'd' to decompress, or 'q' to quit: ");
-            String option = scanner.nextLine();
+    //     while (continueRunning) {
+    //         System.out.print("Enter 'c' to compress, 'd' to decompress, or 'q' to quit: ");
+    //         String option = scanner.nextLine();
 
-            switch (option.toLowerCase()) {
-                case "c":
-                    compressFile(scanner);
-                    break;
-                case "d":
-                    decompressFile(scanner);
-                    break;
-                case "q":
-                    continueRunning = false; // Exit the loop and quit the program
-                    System.out.println("Exiting the program.");
-                    break;
-                default:
-                    System.out.println("Invalid option. Please enter 'c' for compress, 'd' for decompress, or 'q' to quit.");
-            }
-        }
-        scanner.close();
-    }
+    //         switch (option.toLowerCase()) {
+    //             case "c":
+    //                 compressFile(scanner);
+    //                 break;
+    //             case "d":
+    //                 decompressFile(scanner);
+    //                 break;
+    //             case "q":
+    //                 continueRunning = false; // Exit the loop and quit the program
+    //                 System.out.println("Exiting the program.");
+    //                 break;
+    //             default:
+    //                 System.out.println("Invalid option. Please enter 'c' for compress, 'd' for decompress, or 'q' to quit.");
+    //         }
+    //     }
+    //     scanner.close();
+    // }
 
-    private static void compressFile(Scanner scanner) {
-        System.out.print("Enter the filepath of the file to compress, and hit Enter: ");
-        String inputFilePath = scanner.nextLine();
-        String outputFilePath = inputFilePath + ".rle"; // Output file with .rle extension
+    public static void compressFile(String inputFilePath, String outputFilePath) {
 
         try {
             String inputData = new String(Files.readAllBytes(Paths.get(inputFilePath)));
@@ -48,11 +45,7 @@ public class RLE_Algo {
         }
     }
 
-    private static void decompressFile(Scanner scanner) {
-        System.out.print("Enter the filepath of the file to decompress, and hit Enter: ");
-        String inputFilePath = scanner.nextLine();
-        String outputFilePath = inputFilePath.replace(".rle", ""); // Remove .rle extension for output
-
+    public static void decompressFile(String inputFilePath, String outputFilePath) {
         try {
             String compressedData = new String(Files.readAllBytes(Paths.get(inputFilePath)));
             String decompressedData = decompress(compressedData);
